@@ -1,0 +1,22 @@
+.venv/
+__pycache__/
+*.egg-info/
+.pytest_cache/
+.ruff_cache/
+.ipynb_checkpoints/
+.DS_Store
+
+# Data, audio, and artifacts never go in git
+data_local/
+*.wav
+*.flac
+*.opus
+*.mp3
+*.pt
+*.pth
+*.safetensors
+*.ckpt
+checkpoints/
+outputs/
+wandb/
+.env
