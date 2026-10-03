@@ -17,6 +17,7 @@ dependencies = [
   "librosa",
   "pyyaml",
   "tqdm",
+  "scikit-learn"
 ]
 
 [project.optional-dependencies]

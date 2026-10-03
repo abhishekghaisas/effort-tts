@@ -1,7 +1,7 @@
 # Data policy. Numeric choices here are placeholders until Week 1 findings.
 seed: 1234
-holdout_speakers: 10        # speaker-disjoint test split, balance by gender
-balance_holdout_by_gender: true
+holdout_speakers: 10        # speaker-disjoint TEST split, stratified by gender
+val_speakers: 5             # speaker-disjoint VALIDATION split (added; adjust freely)
 # Do NOT peak- or loudness-normalize before effort estimation:
 # level and spectral cues carry the effort signal. Apply loudness in post.
 normalize_loudness: false
