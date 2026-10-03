@@ -1,0 +1,39 @@
+# Fixed evaluation script: 30 lines. EVALUATION ONLY.
+# Never train, fine-tune, or tune hyperparameters on these lines.
+# Do not edit after baselines are generated (it would invalidate comparisons).
+#
+# intent = the effort the CONTENT calls for (calm / urgent / shout). Any line can
+# also be generated at other effort settings; the intent labels let us check that
+# a model does not just shout every line.
+version: 1
+lines:
+  - {id: C01, intent: calm, text: "The kettle has just finished boiling, so the tea should be ready in a minute.", focus: "k/t plosives, affricate"}
+  - {id: C02, intent: calm, text: "Please leave the keys on the table by the door.", focus: "plosives, short"}
+  - {id: C03, intent: calm, text: "We could walk to the market, or wait here until the rain stops.", focus: "w/r/l glides, st clusters"}
+  - {id: C04, intent: calm, text: "Three thick sheets of paper were stacked beside the printer.", focus: "th, sh, st/pr clusters"}
+  - {id: C05, intent: calm, text: "Take your time.", focus: "very short"}
+  - {id: C06, intent: calm, text: "The train to Portland leaves from platform six at a quarter past nine.", focus: "numbers, pl/tf clusters"}
+  - {id: C07, intent: calm, text: "Sixth shelf, second box: the stapler is behind the speakers.", focus: "sibilants, ks/ksth clusters"}
+  - {id: C08, intent: calm, text: "Thanks for waiting. The doctor will see you shortly.", focus: "th, sh, two sentences"}
+  - {id: C09, intent: calm, text: "I think the picture looks better on the left wall, don't you?", focus: "question intonation, k/p"}
+  - {id: C10, intent: calm, text: "Remember to check that the back door is locked before you go to bed tonight, and switch off the lights in the hall.", focus: "long, many plosives, ch/sw"}
+  - {id: U01, intent: urgent, text: "Hurry up, we're going to miss the last bus!", focus: "h/p, st cluster"}
+  - {id: U02, intent: urgent, text: "Listen to me carefully: the meeting has moved to room twelve, starting right now.", focus: "tw/lv clusters, r"}
+  - {id: U03, intent: urgent, text: "Please step away from the doors, the platform is crowded!", focus: "pl/st/dr clusters"}
+  - {id: U04, intent: urgent, text: "Quick, grab the bags and follow me through the back exit.", focus: "kw, gr, ks"}
+  - {id: U05, intent: urgent, text: "No, no, wait! That's the wrong file!", focus: "short phrases, f/th"}
+  - {id: U06, intent: urgent, text: "The bridge is closing in ten minutes, so we have to leave immediately.", focus: "dj affricate, cl, long"}
+  - {id: U07, intent: urgent, text: "Can someone bring the first aid kit over here, please? Now!", focus: "fst cluster, k/b"}
+  - {id: U08, intent: urgent, text: "Stop the car! There's a dog in the road!", focus: "st, th, d/g"}
+  - {id: U09, intent: urgent, text: "We're behind schedule, the cameras roll in five minutes, and nobody has checked the lights.", focus: "sk, ch, long"}
+  - {id: U10, intent: urgent, text: "Don't touch that, it's still hot!", focus: "t/ch/d plosives"}
+  - {id: S01, intent: shout, text: "Watch out!", focus: "very short, wch"}
+  - {id: S02, intent: shout, text: "Get back from the edge right now!", focus: "g/k/dj, r"}
+  - {id: S03, intent: shout, text: "Everybody out of the building, move, move!", focus: "b/ld clusters, repetition"}
+  - {id: S04, intent: shout, text: "Stop! Stop right there!", focus: "st/p, repetition"}
+  - {id: S05, intent: shout, text: "Help! We need help over here!", focus: "lp cluster, repetition"}
+  - {id: S06, intent: shout, text: "Look out below, the crate is falling!", focus: "kr/fl, th"}
+  - {id: S07, intent: shout, text: "Bring it home, you can do it, keep going, keep going!", focus: "br, repetition, k/g"}
+  - {id: S08, intent: shout, text: "Down here! We're down here, can you hear us?", focus: "d/n/w, question"}
+  - {id: S09, intent: shout, text: "Don't just stand there, pull the rope, pull harder, it's slipping!", focus: "pl, st/nd, long"}
+  - {id: S10, intent: shout, text: "Fire in the kitchen, everybody get outside, now, and stay away from the doors!", focus: "f/tch, st, long"}
