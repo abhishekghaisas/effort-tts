@@ -20,10 +20,14 @@ Week 1 of a four-week plan: evidence and go/no-go.
 - Effort estimator v0 (logistic model, loud vs regular reading) with a feature-set ablation
   and out-of-distribution checks
 - Fixed 30-line evaluation script with an EARS-overlap check
-- Chatterbox baseline generation (resumable; reference-clip picker)
+- Chatterbox baseline generation (resumable; reference-clip picker); the full run
+  (5 validation speakers x 30 lines x 5 exaggeration values, 1 seed) has been generated locally
+- Baseline scoring code: Whisper word error rate, WavLM speaker similarity (with a real-speech
+  calibration), and level-free effort scoring with a 4-panel report
 
-**Not yet built:** scoring of generated audio, speaker-similarity and WER metrics, the
-gap report, fine-tuning, listening test, demo.
+**Written but not yet run on real data:** the baseline scoring pipeline above.
+
+**Not yet built:** the gap report write-up, fine-tuning, listening test, demo.
 
 ## Known limitations
 
@@ -32,6 +36,9 @@ gap report, fine-tuning, listening test, demo.
 - The pitch tracker is a simple autocorrelation method with strict voicing rules. Spot-check
   F0 on new audio before trusting it.
 - Only 5 validation speakers: validation differences of a few AUC points are noise.
+- Baseline results so far are one seed per setting, so there are no error bars yet.
+- WER measures Whisper and the TTS together; speaker-similarity thresholds are dataset
+  dependent, so generated clips are compared with real-speech calibration, not a fixed cutoff.
 - The estimator is trained on loud vs regular reading only; level and spectral cues are
   physically correlated, so "effort" here means a gain-invariant acoustic proxy.
 
@@ -46,13 +53,14 @@ pip install -e ".[dev]"
 pytest
 ```
 
-**Chatterbox environment** (Python 3.11; baseline generation only):
+**Chatterbox environment** (Python 3.11; baseline generation, Whisper ASR, speaker embeddings):
 ```bash
 python3.11 -m venv ~/venvs/chatterbox && source ~/venvs/chatterbox/bin/activate
 pip install chatterbox-tts "setuptools<81"
 pip install -e . --no-deps
 ```
-Model weights (about 3 GB) download from Hugging Face on first use. Heavy data lives in
+Model weights (Chatterbox about 3 GB, plus Whisper and WavLM for scoring) download from
+Hugging Face on first use. The project environment also needs `matplotlib` for the report. Heavy data lives in
 `data_local/` (git-ignored) or wherever `EFFORT_DATA_DIR` points, for example a Google
 Drive folder on Colab.
 
@@ -75,14 +83,23 @@ Chatterbox environment:
 python -m efforttts.baselines.references                   # reference clip per speaker
 python -m efforttts.baselines.chatterbox_gen --dry-run     # job count + time estimate
 python -m efforttts.baselines.chatterbox_gen               # resumable
+python -m efforttts.eval.asr_speaker                       # Step A: WER + speaker similarity
 ```
+
+Project environment, after Step A:
+```bash
+python -m efforttts.eval.score_baseline                    # Step B: effort scores, tables, plot
+```
+Outputs land in `data_local/baselines/chatterbox/cfg0.50/` (`results.csv`, `asr_speaker.csv`,
+`real_calibration.csv`, `gap_clips.csv`, `gap_report.png`).
 
 ## Layout
 
 - `src/efforttts/data`: download, inventory, splits, manifest
 - `src/efforttts/effort`: acoustic features, estimator
 - `src/efforttts/baselines`: test script, reference picker, Chatterbox generation
-- `src/efforttts/eval`, `train`, `demo`: planned
+- `src/efforttts/eval`: WER, ASR + speaker similarity (Step A), effort scoring and report (Step B)
+- `src/efforttts/train`, `demo`: planned
 - `configs/`: data policy, fixed 30-line test script (evaluation only; never train on it)
 - `scripts/`: smoke tests; `notebooks/`: Colab bootstrap; `tests/`: pytest suite
 

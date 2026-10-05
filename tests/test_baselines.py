@@ -52,4 +52,4 @@ def test_dry_run_reports_without_torch(tmp_path, monkeypatch, capsys):
     monkeypatch.setenv("EFFORT_DATA_DIR", str(tmp_path))
     G.main(["--speakers", "23", "45", "--dry-run", "--seeds", "2"])
     out = capsys.readouterr().out
-    assert "600 total jobs" in out and "600 pending" in out
+    assert "600 total jobs" in out and "600 pending" in out #pending and total job counts
