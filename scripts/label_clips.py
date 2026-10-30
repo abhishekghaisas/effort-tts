@@ -9,6 +9,8 @@ session resumes where you stopped.
 Run from the repo root (project env is fine):
     python label_clips.py                      # exaggeration 1.6, all clips
     python label_clips.py --limit 10           # quick trial
+    python label_clips.py --lines C09 C02 --min-seed 1 --out PATH   # only new seeds of some lines
+    python label_clips.py --lines C04 C05 --max-seed 0 --seed 7 --out PATH   # relabel seed-0 clips (retest)
     python label_clips.py --audio-dir PATH     # if the clips are not found automatically
 
 Keys (single keypress, no Enter needed except where noted):
@@ -21,6 +23,7 @@ Keys (single keypress, no Enter needed except where noted):
     r   replay            b   go back one clip and relabel it        q   quit (saved)
 A clip can carry several labels. "ok" cannot be combined with others.
 """
+
 import argparse
 import csv
 import os
@@ -41,12 +44,16 @@ LABELS = {
     "d": "duplicated",
     "u": "unintelligible",
 }
-FIELDS = ["job_id", "speaker", "line_id", "intent", "exaggeration", "labels", "seconds"]
+FIELDS = ["job_id", "speaker", "line_id", "intent", "exaggeration", "seed", "labels", "seconds"]
 
 
 def resolve_audio(rel, audio_dir):
     """Find the wav for a relative path from gap_clips.csv."""
-    roots = [audio_dir] if audio_dir else [BASE, BASE / "audio", BASE / "wavs", BASE / "wav", BASE / "clips"]
+    roots = (
+        [audio_dir]
+        if audio_dir
+        else [BASE, BASE / "audio", BASE / "wavs", BASE / "wav", BASE / "clips"]
+    )
     for r in roots:
         p = Path(r) / rel
         if p.exists():
@@ -71,8 +78,10 @@ def save(out_path, order, done):
     with open(tmp, "w", newline="") as f:
         w = csv.DictWriter(f, fieldnames=FIELDS)
         w.writeheader()
-        for jid in order:
-            if jid in done:
+        seen = set()
+        for jid in list(order) + list(done):
+            if jid in done and jid not in seen:
+                seen.add(jid)
                 w.writerow({k: done[jid].get(k, "") for k in FIELDS})
     os.replace(tmp, out_path)
 
@@ -82,7 +91,9 @@ def key():
 
 
 def play(path):
-    return subprocess.Popen(["afplay", str(path)], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    return subprocess.Popen(
+        ["afplay", str(path)], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL
+    )
 
 
 def stop(proc):
@@ -91,12 +102,25 @@ def stop(proc):
 
 
 def main():
-    ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
+    ap = argparse.ArgumentParser(
+        description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter
+    )
     ap.add_argument("--csv", default=str(BASE / "gap_clips.csv"))
     ap.add_argument("--exaggeration", type=float, default=1.6)
     ap.add_argument("--audio-dir", default=None)
-    ap.add_argument("--seed", type=int, default=0, help="fixed shuffle so resuming keeps the same order")
+    ap.add_argument(
+        "--seed", type=int, default=0, help="fixed shuffle so resuming keeps the same order"
+    )
     ap.add_argument("--limit", type=int, default=None)
+    ap.add_argument(
+        "--lines", nargs="*", default=None, help="only these line ids, e.g. C09 C02 S03"
+    )
+    ap.add_argument(
+        "--min-seed", type=int, default=None, help="only clips with seed >= this (e.g. 1)"
+    )
+    ap.add_argument(
+        "--max-seed", type=int, default=None, help="only clips with seed <= this (e.g. 0)"
+    )
     ap.add_argument("--out", default=None)
     a = ap.parse_args()
 
@@ -104,8 +128,16 @@ def main():
     d = d[d["exaggeration"].round(2) == round(a.exaggeration, 2)].copy()
     if "status" in d.columns:
         d = d[d["status"] == "ok"]
+    if a.lines:
+        d = d[d["line_id"].isin(a.lines)]
+    if a.min_seed is not None and "seed" in d.columns:
+        d = d[d["seed"] >= a.min_seed]
+    if a.max_seed is not None and "seed" in d.columns:
+        d = d[d["seed"] <= a.max_seed]
     if d.empty:
-        sys.exit(f"No clips at exaggeration {a.exaggeration} in {a.csv}")
+        sys.exit(
+            f"No clips match (exaggeration {a.exaggeration}, lines {a.lines}, min seed {a.min_seed}) in {a.csv}"
+        )
     rows = d.to_dict("records")
     random.Random(a.seed).shuffle(rows)
     if a.limit:
@@ -141,9 +173,11 @@ def main():
             stop(proc)
             proc = play(path)
             print(f"\n[{i + 1}/{len(rows)}] intended: {str(r['intent']).upper()}")
-            print(f"    \"{r['text']}\"")
-            print("    keys: o ok | c calm-when-loud | l loud-when-calm | d duplicated | "
-                  "u unintelligible | Enter confirm | r replay | b back | q quit")
+            print(f'    "{r["text"]}"')
+            print(
+                "    keys: o ok | c calm-when-loud | l loud-when-calm | d duplicated | "
+                "u unintelligible | Enter confirm | r replay | b back | q quit"
+            )
             go_back = False
             while True:
                 k = key()
@@ -179,9 +213,14 @@ def main():
                     print("    (back one clip)")
                 continue
             done[r["job_id"]] = {
-                "job_id": r["job_id"], "speaker": r["speaker"], "line_id": r["line_id"],
-                "intent": r["intent"], "exaggeration": r["exaggeration"],
-                "labels": labels, "seconds": round(time.time() - t0, 1),
+                "job_id": r["job_id"],
+                "speaker": r["speaker"],
+                "line_id": r["line_id"],
+                "intent": r["intent"],
+                "exaggeration": r["exaggeration"],
+                "seed": r.get("seed", ""),
+                "labels": labels,
+                "seconds": round(time.time() - t0, 1),
             }
             save(out, order, done)
             print(f"    -> {labels}")

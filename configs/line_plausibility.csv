@@ -1,0 +1,11 @@
+line_id,intent,text,loud_plausible
+C01,calm,"The kettle has just finished boiling, so the tea should be ready in a minute.", 2
+C02,calm,"Please leave the keys on the table by the door.", 1
+C03,calm,"We could walk to the market, or wait here until the rain stops.", 2
+C04,calm,"Three thick sheets of paper were stacked beside the printer.", 3
+C05,calm,"Take your time.", 3
+C06,calm,"The train to Portland leaves from platform six at a quarter past nine.", 3
+C07,calm,"Sixth shelf, second box: the stapler is behind the speakers.", 3
+C08,calm,"Thanks for waiting. The doctor will see you shortly.", 1
+C09,calm,"I think the picture looks better on the left wall, don't you?", 1
+C10,calm,"Remember to check that the back door is locked before you go to bed tonight, and switch off the lights in the hall.", 2

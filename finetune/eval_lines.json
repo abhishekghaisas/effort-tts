@@ -1,0 +1,152 @@
+[
+ {
+  "line_id": "S01",
+  "intent": "shout",
+  "text": "Watch out!"
+ },
+ {
+  "line_id": "S02",
+  "intent": "shout",
+  "text": "Get back from the edge right now!"
+ },
+ {
+  "line_id": "S03",
+  "intent": "shout",
+  "text": "Everybody out of the building, move, move!"
+ },
+ {
+  "line_id": "S04",
+  "intent": "shout",
+  "text": "Stop! Stop right there!"
+ },
+ {
+  "line_id": "S05",
+  "intent": "shout",
+  "text": "Help! We need help over here!"
+ },
+ {
+  "line_id": "S06",
+  "intent": "shout",
+  "text": "Look out below, the crate is falling!"
+ },
+ {
+  "line_id": "S07",
+  "intent": "shout",
+  "text": "Bring it home, you can do it, keep going, keep going!"
+ },
+ {
+  "line_id": "S08",
+  "intent": "shout",
+  "text": "Down here! We're down here, can you hear us?"
+ },
+ {
+  "line_id": "S09",
+  "intent": "shout",
+  "text": "Don't just stand there, pull the rope, pull harder, it's slipping!"
+ },
+ {
+  "line_id": "S10",
+  "intent": "shout",
+  "text": "Fire in the kitchen, everybody get outside, now, and stay away from the doors!"
+ },
+ {
+  "line_id": "U01",
+  "intent": "urgent",
+  "text": "Hurry up, we're going to miss the last bus!"
+ },
+ {
+  "line_id": "U02",
+  "intent": "urgent",
+  "text": "Listen to me carefully: the meeting has moved to room twelve, starting right now."
+ },
+ {
+  "line_id": "U03",
+  "intent": "urgent",
+  "text": "Please step away from the doors, the platform is crowded!"
+ },
+ {
+  "line_id": "U04",
+  "intent": "urgent",
+  "text": "Quick, grab the bags and follow me through the back exit."
+ },
+ {
+  "line_id": "U05",
+  "intent": "urgent",
+  "text": "No, no, wait! That's the wrong file!"
+ },
+ {
+  "line_id": "U06",
+  "intent": "urgent",
+  "text": "The bridge is closing in ten minutes, so we have to leave immediately."
+ },
+ {
+  "line_id": "U07",
+  "intent": "urgent",
+  "text": "Can someone bring the first aid kit over here, please? Now!"
+ },
+ {
+  "line_id": "U08",
+  "intent": "urgent",
+  "text": "Stop the car! There's a dog in the road!"
+ },
+ {
+  "line_id": "U09",
+  "intent": "urgent",
+  "text": "We're behind schedule, the cameras roll in five minutes, and nobody has checked the lights."
+ },
+ {
+  "line_id": "U10",
+  "intent": "urgent",
+  "text": "Don't touch that, it's still hot!"
+ },
+ {
+  "line_id": "C01",
+  "intent": "calm",
+  "text": "The kettle has just finished boiling, so the tea should be ready in a minute."
+ },
+ {
+  "line_id": "C02",
+  "intent": "calm",
+  "text": "Please leave the keys on the table by the door."
+ },
+ {
+  "line_id": "C03",
+  "intent": "calm",
+  "text": "We could walk to the market, or wait here until the rain stops."
+ },
+ {
+  "line_id": "C04",
+  "intent": "calm",
+  "text": "Three thick sheets of paper were stacked beside the printer."
+ },
+ {
+  "line_id": "C05",
+  "intent": "calm",
+  "text": "Take your time."
+ },
+ {
+  "line_id": "C06",
+  "intent": "calm",
+  "text": "The train to Portland leaves from platform six at a quarter past nine."
+ },
+ {
+  "line_id": "C07",
+  "intent": "calm",
+  "text": "Sixth shelf, second box: the stapler is behind the speakers."
+ },
+ {
+  "line_id": "C08",
+  "intent": "calm",
+  "text": "Thanks for waiting. The doctor will see you shortly."
+ },
+ {
+  "line_id": "C09",
+  "intent": "calm",
+  "text": "I think the picture looks better on the left wall, don't you?"
+ },
+ {
+  "line_id": "C10",
+  "intent": "calm",
+  "text": "Remember to check that the back door is locked before you go to bed tonight, and switch off the lights in the hall."
+ }
+]

@@ -5,7 +5,7 @@ similarity (WavLM x-vector embeddings, cosine). Also embeds REAL speech from the
 speakers (their other freeform speech, plus regular/loud reading and anger/ecstasy/neutral
 freeform) so we can see how much similarity drops from real vocal effort alone.
 
-    python -m efforttts.eval.asr_speaker [--cfg-weight 0.5]
+    python -m efforttts.eval.asr_speaker [--cfg-weight 0.5] [--root DIR]
 
 Similarity is measured against (a) the speaker's CENTROID of real freeform windows that
 exclude the reference clip, and (b) the exact reference clip Chatterbox was conditioned on.
@@ -13,6 +13,7 @@ Resumable: finished clips in asr_speaker.csv are skipped. Outputs next to result
 Models: openai/whisper-small.en (Apache-2.0 per its model card) and
 microsoft/wavlm-base-plus-sv (license: see Microsoft's link on its card [UNVERIFIED]).
 """
+
 from __future__ import annotations
 
 import argparse
@@ -30,8 +31,13 @@ SPK_MODEL = "microsoft/wavlm-base-plus-sv"
 SR16 = 16_000
 FRAME_S = 0.02
 ACTIVE_RANGE_DB = 30.0
-CALIBRATION = [("reading", "regular"), ("reading", "loud"), ("emotion_freeform", "anger"),
-               ("emotion_freeform", "extasy"), ("emotion_freeform", "neutral")]
+CALIBRATION = [
+    ("reading", "regular"),
+    ("reading", "loud"),
+    ("emotion_freeform", "anger"),
+    ("emotion_freeform", "extasy"),
+    ("emotion_freeform", "neutral"),
+]
 
 
 def read_audio_16k(path: Path) -> np.ndarray:
@@ -66,9 +72,16 @@ def window_density(x: np.ndarray, sr: int, start_s: float, win_s: float) -> floa
     return float(active[a:b].mean())
 
 
-def pick_centroid_windows(audios: dict[str, np.ndarray], ref_source: str, ref_start: float,
-                          win_s: float = 10.0, step_s: float = 30.0, max_windows: int = 6,
-                          min_density: float = 0.85, sr: int = SR16) -> list[tuple[str, float]]:
+def pick_centroid_windows(
+    audios: dict[str, np.ndarray],
+    ref_source: str,
+    ref_start: float,
+    win_s: float = 10.0,
+    step_s: float = 30.0,
+    max_windows: int = 6,
+    min_density: float = 0.85,
+    sr: int = SR16,
+) -> list[tuple[str, float]]:
     """Windows from the speaker's real freeform speech that do NOT overlap the reference clip,
     spread across files (round-robin) and skipping windows with long pauses."""
     per_src: dict[str, list[float]] = {}
@@ -124,6 +137,11 @@ def _unit(v: np.ndarray) -> np.ndarray:
 def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("--cfg-weight", type=float, default=0.5)
+    ap.add_argument(
+        "--root",
+        default=None,
+        help="folder containing results.csv and the wavs (default: the Chatterbox baseline for --cfg-weight)",
+    )
     ap.add_argument("--asr-model", default=ASR_MODEL)
     ap.add_argument("--asr-device", default="cpu")
     ap.add_argument("--speaker-device", default="cpu")
@@ -131,7 +149,11 @@ def main() -> None:
 
     from efforttts.baselines.references import freeform_files
 
-    root = config.data_root() / "baselines" / "chatterbox" / f"cfg{args.cfg_weight:.2f}"
+    root = (
+        Path(args.root)
+        if args.root
+        else config.data_root() / "baselines" / "chatterbox" / f"cfg{args.cfg_weight:.2f}"
+    )
     refs_dir = config.data_root() / "baselines" / "references"
     with open(root / "results.csv", newline="") as f:
         gen = [r for r in csv.DictReader(f) if r["status"] == "ok"]
@@ -147,21 +169,34 @@ def main() -> None:
     manifest = list(csv.DictReader(open(config.processed_dir() / "manifest.csv", newline="")))
     for spk in speakers:
         ref_emb[spk] = embed(read_audio_16k(refs_dir / f"{spk}.wav"))
-        audios = {str(p.relative_to(config.raw_dir())): read_audio_16k(p) for p in freeform_files(spk)}
+        audios = {
+            str(p.relative_to(config.raw_dir())): read_audio_16k(p) for p in freeform_files(spk)
+        }
         wins = pick_centroid_windows(audios, ref_info[spk]["source"], ref_info[spk]["start_s"])
         if not wins:
             raise SystemExit(f"No usable non-reference freeform windows for {spk}")
-        embs = [embed(audios[s][int(a * SR16): int((a + 10.0) * SR16)]) for s, a in wins]
+        embs = [embed(audios[s][int(a * SR16) : int((a + 10.0) * SR16)]) for s, a in wins]
         centroids[spk] = _unit(np.mean(embs, axis=0))
-        print(f"{spk}: centroid from {len(wins)} real windows; "
-              f"ref-vs-centroid similarity {float(ref_emb[spk] @ centroids[spk]):.3f}")
+        print(
+            f"{spk}: centroid from {len(wins)} real windows; "
+            f"ref-vs-centroid similarity {float(ref_emb[spk] @ centroids[spk]):.3f}"
+        )
         for r in manifest:
             if r["speaker"] == spk and (r["category"], r["label"]) in CALIBRATION:
                 e = embed(read_audio_16k(config.raw_dir() / r["path"]))
-                cal_rows.append({"speaker": spk, "stem": r["stem"], "category": r["category"],
-                                 "label": r["label"], "sim_to_centroid": float(e @ centroids[spk])})
+                cal_rows.append(
+                    {
+                        "speaker": spk,
+                        "stem": r["stem"],
+                        "category": r["category"],
+                        "label": r["label"],
+                        "sim_to_centroid": float(e @ centroids[spk]),
+                    }
+                )
     with open(root / "real_calibration.csv", "w", newline="") as f:
-        w = csv.DictWriter(f, fieldnames=["speaker", "stem", "category", "label", "sim_to_centroid"])
+        w = csv.DictWriter(
+            f, fieldnames=["speaker", "stem", "category", "label", "sim_to_centroid"]
+        )
         w.writeheader()
         w.writerows(cal_rows)
     print(f"real calibration: {len(cal_rows)} clips -> {root / 'real_calibration.csv'}")
@@ -182,9 +217,15 @@ def main() -> None:
             x = read_audio_16k(root / r["path"])
             hyp = transcribe(x)
             e = embed(x)
-            w.writerow({"job_id": r["job_id"], "hypothesis": hyp, "wer": f"{wer(r['text'], hyp):.4f}",
-                        "sim_to_centroid": f"{float(e @ centroids[r['speaker']]):.4f}",
-                        "sim_to_reference": f"{float(e @ ref_emb[r['speaker']]):.4f}"})
+            w.writerow(
+                {
+                    "job_id": r["job_id"],
+                    "hypothesis": hyp,
+                    "wer": f"{wer(r['text'], hyp):.4f}",
+                    "sim_to_centroid": f"{float(e @ centroids[r['speaker']]):.4f}",
+                    "sim_to_reference": f"{float(e @ ref_emb[r['speaker']]):.4f}",
+                }
+            )
             fh.flush()
             if i % 25 == 0:
                 print(f"[{i}/{len(todo)}]")
