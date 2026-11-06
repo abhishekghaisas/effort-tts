@@ -8,6 +8,43 @@ speaker identity survives.
 
 Solo research project. Research and portfolio use only (see *Data and licensing*).
 
+## Versions
+
+**v1.0: Chatterbox (2026-10-02 to 2026-10-30). Closed.** Everything built and measured with Chatterbox as the TTS model:
+the EARS pipeline and level-free effort estimator, the 30-line evaluation set, the Chatterbox baseline (effort control strong
+and monotone, Spearman 0.75, but about 9x a real speaker's identity drop at loud effort, pacing entangled with the knob,
+54% speech-problem rate at the top, text-independent), the human-label study (reliability kappa 0.53), the generation,
+scoring and comparison harness, and a negative result: effort-conditioned LoRA fine-tunes (v0, v1) and an extrapolation
+control did not reproduce EARS loud speech (best Spearman 0.33, median effort at the top scalar about -3 against +7 for
+stock), plus a token probe (mild loud reading is partly visible in S3 tokens, AUC 0.75). Chatterbox full or partial
+fine-tuning is not a guaranteed route and is shelved (`finetune_patch/v1_1_shelved/`, never run). Tag: `v1.0-chatterbox`.
+
+**v2.0: Qwen3-TTS activation steering (started 2026-10-30; in progress, last updated 2026-11-03).** Training-free steering of
+Qwen3-TTS (reported Apache-2.0, 0.6B and 1.7B Base, zero-shot cloning) along an effort direction derived from the EARS matched
+loud and regular readings; the steering strength k is the continuous, reproducible control. Not tried before (checked against both
+handoffs and the earlier project chats). Closest prior art: Akti and Waibel, arXiv 2610.07647 (vocal effort steering on Qwen3-TTS, framed
+as Lombard speech in noise); also arXiv 2609.33810 (speaking-rate steering, additive vs clamp). The evaluation reuses the v1.0
+harness. Full plan, ground rules (dev vs final), commands, results, decisions and change log: `qwen_v2/PLAN.md`.
+Status in one paragraph (dev results, one seed, estimator-based): a shared effort direction exists across 12 training speakers; on layer 21 the
+steering strength k gives a smooth, monotone, text-independent effort control from k about 0.2 to 1.0 (estimator effort -3.5 unsteered, 8 at k = 0.5
+about real loud, 15 at k = 0.6 to 0.75 about anger, 20 at k = 1 about yelling) with speaker similarity 0.944 at k = 0.5 and 0.906 at k = 1 (unsteered
+0.949; stock Chatterbox lost 0.10 at effort 7), WER near 0 and all clips ending normally; beyond k = 1 termination, identity and intelligibility degrade
+(k = 2 and 4 are maniacal or distorted, and not only in the runaway tail). Spreading over several layers did not help. Scored through k = 2.0: among clips that end on their own, similarity is 0.906 at k = 1, 0.905 at 1.25, 0.883 at 1.5,
+0.837 at 1.75 and 0.819 at 2.0 (WER 0 up to 1.75), but the share that end on their own falls from 24 of 24 to 18, 13, 13 and 11 of 24, so at k = 1.25 to 1.5 the
+termination failure, not identity, is the limit. A hard length cap (1.5x the expected duration) fixed the stopping but cut the last word of shouted clips, so the
+end-of-speech guard is now an offline trim to the end of the last target word using ASR word timestamps (`qwen_v2/trim_to_text.py`). After trimming, all 24 dev clips at k = 1.25 are usable (similarity 0.894, WER median 0) and 22 of 24 at k = 1.5 (0.871); k = 1.75 and above stays degraded.
+`qwen_v2/level_stage.py` sets the final loudness independently of the steering.
+(The voice-offset re-trim scores the same as the fixed-pad one, so the last-word check is by ear; a dimensional arousal / dominance / valence model scored against real EARS emotional clips (`qwen_v2/emotion_dim.py`) shows arousal rising smoothly with k, k = 0.5 matching real loud speech and k = 1.0 matching the arousal of real anger and ecstasy, but valence drifting UP from k about 1.0 while real anger, fear and distress go down, i.e. the manic impression is high arousal with high valence; the acting window is about k = 0.75 to 1.0 an anger-based direction, tested next, roughly halves that valence drift at matched arousal (+0.03 to +0.07 against +0.13) with similar identity but garbles clips from k = 1.25, and one listener finds it the best result so far (no manic state, no distortion, higher k sounds like controlled, rational urgency), so it is the default variant in the showcase, with the loud-reading direction as the second; a first 4-class classifier (`emotion_drift.py`) only labelled steered clips "happy" and saturated)
+In listening, the trim cut the last word slightly early from k = 1.25 (now fixed to cut where the voice stops), and for a fear line ("Fire in the kitchen, everybody out!") the voice turned
+maniacal at higher k, (weaker on the other shout lines of the same speaker, so it depends on the line: steering seems to amplify the arousal the text implies, and an alarm line turns manic at higher k), so the effort direction is not emotion-neutral and the acting-appropriate window is about k <= 1.0 to 1.25; "emotion fits the line" and "maniacal" become evaluation labels. Listening (one rater, equal-level ladder): the unsteered clip is absolutely calm, the voice rises subtly and steadily through k = 0.5, is louder at 0.75, and is clearly
+shouting at k = 1.0, 1.25 and 1.5, with distortion creeping in at the very end of the clip above that (and more at 2.0); an earlier raw-playback note called k = 1
+"slightly louder, not shouting" (different line and playback, not reconciled). The estimator overstates k = 0.5 and plateaus at k >= 1, so blind forcefulness
+ratings, an anger-based direction, bounded generation (to fix the ending) and the final evaluation on the 10 untouched test speakers with the 30 test lines come next. A level check showed that steering also
+raises speech level by about +8 dB at k = 0.35, +14 at 0.5 and +25 at k = 1 (near full scale, likely clipping), so level and voice quality are to be
+separated: level-matched direction extraction, an equal-level listening ladder, and a controlled loudness stage in post.
+
+**Final deliverable (decided 2026-11-03): a Streamlit showcase** of the best variations of both systems (`showcase/`), with one visible curation filter, metrics and the negative results. Hosting is to be decided: the voices are clones of EARS participants (CC BY-NC 4.0), so the default is private or local (see `showcase/README.md`). The final test-speaker evaluation, a second rater and further directions are now optional.
+
 ## Target system and scope
 
 Intended end state: given a line of text and a cloned voice, the system decides how much vocal
@@ -74,9 +111,10 @@ acoustic proxy, not a perceptual measure, and has not been validated on syntheti
 
 ## Status
 
-Week 1 of a four-week plan: evidence and go/no-go. Last updated 2026-10-28.
+**v2.0 (Qwen3-TTS steering) is in progress; see *Versions* and `qwen_v2/PLAN.md`.** v1.0 (Chatterbox) was closed on 2026-10-30;
+its status follows. Last updated 2026-11-03. The original one-month budget (2026-10-02 to 2026-11-02) has elapsed; remaining work is a time-boxed wrap-up (see `qwen_v2/PLAN.md`).
 
-**Built**
+**Built (v1.0)**
 - EARS download, inventory, QA, speaker-disjoint train/val/test split (seeded, gender-stratified)
 - Per-file manifest with level and clipping statistics
 - Gain-invariant acoustic features (spectral tilt, alpha ratio, Hammarberg, cepstral peak
@@ -93,9 +131,18 @@ Week 1 of a four-week plan: evidence and go/no-go. Last updated 2026-10-28.
   baseline (see *Baseline results*)
 - Test suite: 38 tests passing
 
-**Not yet done:** multi-seed runs, second-stage label analysis (stratification, detector rules,
-similarity headroom), labels for other exaggeration settings, fine-tune go/no-go, the written
-gap report, the multi-rater listening test, demo.
+**Not done in v1.0 (now closed or superseded):** multi-seed runs, second-stage label analysis (stratification, detector rules,
+similarity headroom), labels for other exaggeration settings, the written gap report, the multi-rater listening test, demo.
+The fine-tune go/no-go was completed and was negative (LoRA v0 and v1; see *Versions*).
+
+**Built (v2.0)**
+- Qwen3-TTS environment (Python 3.12) and recon of the model structure; reference transcripts for the validation references
+- `qwen_v2/qwen_gen.py` (zero-shot and steered generation in the v1.0 layout), `qwen_extract.py` (direction extraction),
+  `run_dev_sweep.sh` and `run_dev_sweep2.sh`, `sweep_summary.py`, `make_ladder.py`, `worst_clips.py`, `crop_runaways.py`, `trim_to_text.py`, `level_stage.py`, `dev_lines.json`
+- Directions extracted from the 12 training speakers; sweeps 1 to 3 (layer 21, k 0.05 to 1.5), a multi-layer spread test and a runaway-crop test generated and
+  scored (dose-response table in `qwen_v2/PLAN.md`); `level_by_k.py` and an anger-direction option for the extractor written
+
+**Working agreement:** README and `qwen_v2/PLAN.md` are updated after every step.
 
 ## Baseline results (Chatterbox, Week 1)
 
@@ -423,6 +470,18 @@ shout 7.68, urgent 5.05). v1 training: 564 steps in 45.6 min, loss 6.6 to about 
 memorization from 3x repeated clips), grad norm rising from about 1.5 to 5-9, no NaN. Verdict: v1 misses the pre-set bar
 (Spearman >= 0.6, median effort >= +3 at the top scalar, similarity >= 0.90) by a wide margin; both LoRA fine-tunes keep
 identity and intelligibility but do not reproduce the EARS loud mapping. Decision: stop fine-tuning with this recipe.
+Token probe (`token_probe.py`; 12 training speakers, 204 regular + 108 loud reading clips, logistic regression on S3 token
+frequencies, speaker-held-out CV): length-only AUC 0.476; token-frequency AUC 0.745 (raw) and 0.754 (speaker-centred);
+shuffled-label controls 0.46 and 0.35. So mild loud reading is partly visible in the S3 tokens (and not through duration),
+which does not support the idea that effort lives only in the frozen decoder; a T3-only fine-tune is not ruled out in
+principle. The v0/v1 failure is more likely a subtle signal against the token loss with about 2 h of data and 400 to 560 steps.
+The probe is crude (frequencies only), covers mild loud reading rather than shouting, and says nothing about the decoder.
+SHELVED Chatterbox v1.1 pack (2026-10-30, files in `finetune_patch/v1_1_shelved/`, notebook `effort_v1_1_shelved_colab.ipynb`, untested, not run): a diagnostic (v1 adapter on
+TRAINING speakers p001 to p006, scalars 0.5 and 3.0, to tell 'does not generalize to new speakers' from 'never learned the
+mapping'), then a partial fine-tune (cond encoder, speech head, last 12 of 30 transformer layers, lr 5e-5, scalar projection at
+20x, 8 epochs, high-effort clips repeated 2x), with a switch to full fine-tuning (about 8.5 GB of weights, gradients and
+Adam states before activations; tight on a T4, optional 8-bit optimizer). `gen_eval.py` gained `--t3-weights` to load full
+weights. Colab T4 time is a daily allowance, not a monthly one.
 v1 plan (files in `finetune_patch/v1/`, notebook `effort_v1_colab.ipynb`, untested): scalar projection trained at 20x the LoRA
 rate (LoRA 2e-4), loud clips labeled 3.0 and regular 0.5 (more leverage for the scalar), the 8 lowest-arousal emotion styles
 dropped, clips with raw score >= 2.5 repeated 3x (about 55% of items), 12 epochs; all label changes applied at load time
@@ -478,6 +537,20 @@ changes; `train.py` and `config.py` carry the new flag and settings. Nothing has
   rank-only (zero is the loud/regular boundary, not "calm").
 - Scoring emits a harmless `WavFileWarning` (non-data chunk skipped) when reading some WAVs.
 
+**v2.0 limitations (2026-10-31)**
+- The effort estimator is not validated on steered synthetic audio and rated k = 1 clips as near-yelling (about 20) while a listener
+  heard "slightly louder, distressed"; effort scores of runaway or distorted clips are meaningless. One rater so far.
+- Development uses the 0.6B model on a Mac CPU, 3 validation speakers, 8 dev lines and one seed; choices made on the validation
+  speakers are optimistic, so the headline numbers must come from the untouched test speakers with the 30 test lines.
+- Steering is additive at every decode step; strengths of k = 2 and above produced runaway generations (no end of speech) and
+  maniacal or distorted audio. Only the talker is steered; the code predictor (15 of 16 codebooks) is not.
+- Directions come from generation-based pairs (a regular or a loud reference clip, same target text), so they may encode reference
+  differences other than effort (rate, clip length, recording level). The speaker-agreement figure (cosine 0.80 to 0.91) is slightly
+  inflated because each speaker is in the mean.
+- Mac wall times are unreliable (the machine slept during long runs); `gen_s` values above 100 s are sleep artifacts.
+- The effort direction is not emotion-neutral: at k >= 1.25 an urgent or frightened line can sound manic, which the estimator, similarity and WER cannot see.
+- The effort estimator saturates near 20 (real yelling), so it cannot rank steered clips beyond k = 1; the dose-response numbers are estimator-based and one seed.
+
 ## Setup
 
 Two environments, because Chatterbox pins its own dependency versions.
@@ -499,6 +572,15 @@ Model weights (Chatterbox about 3 GB, plus Whisper and WavLM for scoring) downlo
 Hugging Face on first use. The project environment also needs `matplotlib` for the report. Heavy data lives in
 `data_local/` (git-ignored) or wherever `EFFORT_DATA_DIR` points, for example a Google
 Drive folder on Colab.
+
+**Qwen environment** (Python 3.12; v2.0 steering experiments; CPU is enough for the 0.6B model):
+```bash
+brew install python@3.12 sox
+python3.12 -m venv ~/venvs/qwen3tts && source ~/venvs/qwen3tts/bin/activate
+pip install -U qwen-tts soundfile
+```
+`qwen-tts` pins transformers 4.57.3 and pulls torch. Model weights (about 2 GB for 0.6B-Base) download on first use. Reference
+transcripts come from `scripts/transcribe_refs.py` (Chatterbox environment). Keep the Mac awake for long runs: `caffeinate -i`.
 
 ## Pipeline
 
@@ -554,7 +636,20 @@ print(len(r), collections.Counter(x["status"] for x in r))
 EOF
 ```
 
+### v2.0 commands
+The ordered v2.0 command list (recon, baseline, extraction, sweeps, scoring, listening tools) lives in `qwen_v2/PLAN.md`
+under *Environment and commands*; in zsh use `LINE_IDS` and `$=LINE_IDS`, never a variable called `LINES`.
+
 ## Next steps
+
+**v2.0 (current; details and priorities in `qwen_v2/PLAN.md`)**
+1. Perceptual calibration: listen to the ladders (k 0.35 to 1.0) for the first rung that sounds loud and the first that sounds like shouting; run `level_by_k.py` (done: level rises +8 dB at k = 0.35 and +25 dB at k = 1; now also checks peaks), listen to the raw and the equal-level ladders, extract a level-matched direction (`--match-level -26`) and an anger-based direction (`qwen_extract.py --loud-emotion anger`) and sweep it at small k.
+2. Step A (identity, WER) on the steered roots and `worst_clips.py` to check the automatic measures against the ears.
+3. If the clean range does not reach shouting: an anger-based direction, steering the code predictor, the 1.7B model on a T4, or a loudness stage in post.
+4. Zero-shot baseline on all 5 validation speakers x 30 lines; then the final evaluation on the 10 test speakers with the frozen settings.
+5. Blind human check (2+ raters) with an artifact label, then the write-up. Re-run the prior-art search first.
+
+**v1.0 (closed 2026-10-30; kept for the record)**
 
 1. Adopt a short written labeling rubric (what counts as duplicated, unintelligible, sounds
    calm) before any further labeling, and plan the multi-rater listening test (Week 4), since
@@ -593,6 +688,9 @@ EOF
 - `src/efforttts/baselines`: test script, reference picker, Chatterbox generation
 - `src/efforttts/eval`: WER, ASR + speaker similarity (Step A), effort scoring and report (Step B)
 - `src/efforttts/train`, `demo`: planned
+- `showcase/`: the Streamlit showcase (generator for Chatterbox dev clips, builder with one presentability filter, app, README with the hosting decision)
+- `qwen_v2/`: v2.0 Qwen3-TTS steering (plan, generation, extraction, sweeps, listening and artifact tools); `qwen_v2/directions_*.pt` is EARS-derived: keep it out of git
+- `finetune_patch/`: v1.0 Chatterbox fine-tune pack (v0, v1) and the shelved `v1_1_shelved/` (never run); `compare_systems.py`, `compare_runs.py`, `token_probe.py`: v1.0 analysis tools
 - `configs/`: data policy, fixed 30-line test script (evaluation only; never train on it)
 - `scripts/`: smoke tests; `notebooks/`: Colab bootstrap; `tests/`: pytest suite
 
@@ -605,5 +703,9 @@ EOF
   publishing decision is made.
 - Chatterbox is MIT-licensed and watermarks every output; keep the watermark intact and
   disclose synthetic audio in demos.
+- Qwen3-TTS (v2.0) is reported to be Apache-2.0 (confirm on the model card before any release). I have not verified whether its outputs are
+  watermarked; disclose synthetic audio in demos either way.
+- EARS-derived v2.0 artifacts stay local and out of git: reference clips and their Whisper transcripts, `directions_*.pt`, generated clips and
+  ladders. Suggested `.gitignore` entries: `data_local/`, `qwen_recon.wav`, `ladder_*.wav`, `qwen_v2/directions_*.pt`, `EffortDataset/`, `tokens.npz`.
 - Consenting adult voices only. No minors' voices in training or demo data.
 - Verify the license of every model and dataset before use.

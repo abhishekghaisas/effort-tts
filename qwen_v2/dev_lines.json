@@ -1,0 +1,10 @@
+[
+  {"line_id": "D01", "intent": "shout",  "text": "Get away from the edge right now!"},
+  {"line_id": "D02", "intent": "shout",  "text": "Stop the car, there is a child on the road!"},
+  {"line_id": "D03", "intent": "shout",  "text": "Fire in the kitchen, everybody out!"},
+  {"line_id": "D04", "intent": "urgent", "text": "We need to leave in two minutes, grab your things."},
+  {"line_id": "D05", "intent": "urgent", "text": "Quick, close the window before the storm hits."},
+  {"line_id": "D06", "intent": "urgent", "text": "Call the doctor, she is not breathing well."},
+  {"line_id": "D07", "intent": "calm",   "text": "The tea is on the table if you would like some."},
+  {"line_id": "D08", "intent": "calm",   "text": "Take a moment and tell me how your day went."}
+]
