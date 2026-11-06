@@ -38,3 +38,7 @@ data_local/
 qwen_recon.wav
 ladder_*.wav
 tokens.npz
+!showcase/audio/
+!showcase/audio/**/*.wav
+!showcase/audio_failed/
+!showcase/audio_failed/**/*.wav
